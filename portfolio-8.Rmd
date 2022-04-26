@@ -1,0 +1,89 @@
+---
+title: "Portfolio-8"
+author: "Elayna Seago"
+date: "4/26/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+I am learning how do to a few data cleaning things/prep my data for analyses. I could not figure out how to pivot longer to have 2 new factors, so I made this work around using separate.
+
+```{r libraries}
+library(readxl)
+library(tidyverse)
+library(rstatix)
+library(afex)
+```
+
+```{r}
+RTdata <- read_excel("RTData_Young.xlsx")
+```
+
+
+```{r}
+RTdata_long <- RTdata %>%
+  pivot_longer(cols = -PID, names_to = "condition", values_to = "RT")
+
+RTdata_long
+```
+
+```{r}
+RTdata_long %>% 
+  mutate(RT = as.numeric(RT)) %>% 
+  mutate(PID = as.factor(PID))
+
+```
+
+
+```{r}
+RTdata_long_sep <- RTdata_long %>% 
+  separate(condition, sep = "_", into = c("cue" , "block"))
+```
+
+
+```{r}
+RTdata_long_sep[RTdata_long_sep == "Hold"] <- "1"
+RTdata_long_sep[RTdata_long_sep == "Shift"] <- "2"
+RTdata_long_sep[RTdata_long_sep == "MostlyHold"] <- "1"
+RTdata_long_sep[RTdata_long_sep == "MostlyShift"] <- "2"
+```
+
+```{r}
+RTdata_long_sep
+```
+```{r}
+RTdata_long_sep %>% 
+  mutate(cue = as.factor(cue)) %>% 
+  mutate(block = as.factor(block))
+```
+
+
+```{r}
+RTdata_long_sep$block <- factor(RTdata_long_sep$block,
+                               levels = c(1,2),
+                               labels = c("Mostly_Hold_Block", "Mostly_Shift_Block")) 
+
+#converts 1's and 2's in the data file to correspond to factor labels of the block type variable of study method.
+
+RTdata_long_sep$cue <-factor(RTdata_long_sep$cue,
+                                  levels = c(1,2),
+                                  labels = c("Hold_Cue", "Shift_Cue")) 
+```
+
+
+```{r}
+RT.aov.1 <- aov_car(RT ~ block*cue+ Error(PID/block*cue), data=RTdata_long_sep)
+
+RT.aov.1 
+```
+
+
